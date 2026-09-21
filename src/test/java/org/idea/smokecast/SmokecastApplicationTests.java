@@ -35,6 +35,27 @@ class SmokecastApplicationTests {
         assertThat(get("/api/v1/detection/999999").statusCode()).isEqualTo(404);
     }
 
+    @Test void filtersBeforePaginationAndCountsOnlyMatches() throws Exception {
+        try {
+            for (int i = 1; i <= 105; i++) {
+                jdbc.update("INSERT INTO fire_events (id,country_hint,max_frp) VALUES (?,?,?)", i, "Guyana", 200);
+            }
+            jdbc.update("INSERT INTO fire_events (id,country_hint,max_frp) VALUES (106,'Chile',30),(107,'Chile',90),(108,'Chile',150),(109,'Chile',151),(110,'Chile',15)");
+            var result = get("/api/v1/fires?country=Chile&severity=Bajo&size=1&page=1");
+            assertThat(result.statusCode()).isEqualTo(200);
+            assertThat(result.body()).contains("\"id\":110", "\"totalElements\":2", "\"totalPages\":2").doesNotContain("Guyana");
+            assertThat(get("/api/v1/fires?severity=Moderado").body()).contains("\"id\":107", "\"totalElements\":1");
+            assertThat(get("/api/v1/fires?severity=Alto").body()).contains("\"id\":108", "\"totalElements\":1");
+            assertThat(get("/api/v1/fires?q=Incendio%20%23109").body()).contains("\"id\":109", "\"totalElements\":1");
+            assertThat(get("/api/v1/fires?q=chile").body()).contains("\"totalElements\":5");
+            assertThat(get("/api/v1/fires?q=%25").body()).contains("\"totalElements\":0");
+            assertThat(get("/api/v1/fires?severity=invalid").statusCode()).isEqualTo(400);
+            assertThat(get("/api/v1/fires/countries").body()).isEqualTo("[\"Chile\",\"Guyana\"]");
+        } finally {
+            jdbc.update("DELETE FROM fire_events");
+        }
+    }
+
     @Test void readsEventsAndRelatedDetections() throws Exception {
         jdbc.update("INSERT INTO fire_events (id,centroid_lat,centroid_lon,detection_count) VALUES (1,-12,-77,1)");
         jdbc.update("INSERT INTO fire_detections (id,fire_event_id,latitude,longitude) VALUES (1,1,-12,-77)");

@@ -42,3 +42,9 @@ No hay endpoints de escritura ni agrupación automática de incendios en este hi
 
 `./mvnw test` usa H2 únicamente para pruebas, sin necesitar MySQL.
 `./mvnw package` genera el JAR en `target/`.
+
+El listado acepta `country`, `severity` (`Bajo`, `Moderado`, `Alto`, `Crítico`) y
+`q` (país, ID exacto o `Incendio #123`). Los filtros se combinan antes de paginar;
+`totalElements` y `totalPages` representan las coincidencias. Orden estable por ID.
+Ejemplo: `/api/v1/fires?country=Chile&severity=Bajo&page=0&size=100`.
+`GET /api/v1/fires/countries` devuelve los países de todo el catálogo para el selector.

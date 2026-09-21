@@ -25,11 +25,23 @@ public class FireEventController {
     @GetMapping
     public ResponseEntity<Page<FireEventResponseDto>> getAll(
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "") String country,
+            @RequestParam(defaultValue = "") String severity,
+            @RequestParam(defaultValue = "") String q) {
         if (page < 0 || size < 1 || size > 500) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "page debe ser >= 0 y size entre 1 y 500");
         }
-        return ResponseEntity.ok(fireEventService.getAllFireEvents(PageRequest.of(page, size)));
+        if (country.length() > 80 || q.length() > 100 || !java.util.List.of("", "Bajo", "Moderado", "Alto", "Crítico").contains(severity)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Filtros inválidos");
+        }
+        return ResponseEntity.ok(fireEventService.getAllFireEvents(
+            PageRequest.of(page, size, org.springframework.data.domain.Sort.by("id")), country.trim(), severity, q.trim()));
+    }
+
+    @GetMapping("/countries")
+    public java.util.List<String> countries() {
+        return fireEventService.getCountries();
     }
 
     @GetMapping("/{id}")

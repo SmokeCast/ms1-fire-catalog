@@ -18,9 +18,37 @@ public class FireEventService {
     private final FireEventRepository fireEventRepository;
     private final ModelMapper modelMapper;
 
-    public Page<FireEventResponseDto> getAllFireEvents(PageRequest pageRequest) {
-        return fireEventRepository.findAll(pageRequest)
-                .map(fireEventResponseDto -> modelMapper.map(fireEventResponseDto, FireEventResponseDto.class));
+    public java.util.List<String> getCountries() {
+        return fireEventRepository.findCountries();
+    }
+
+    public Page<FireEventResponseDto> getAllFireEvents(PageRequest pageRequest, String country, String severity, String q) {
+        org.springframework.data.jpa.domain.Specification<FireEvent> filter = (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
+            if (!country.isBlank()) predicates.add(cb.equal(cb.lower(root.get("countryHint")), country.toLowerCase(java.util.Locale.ROOT)));
+            var frp = root.<java.math.BigDecimal>get("maxFrp");
+            switch (severity) {
+                case "Bajo" -> predicates.add(cb.le(cb.coalesce(frp, java.math.BigDecimal.ZERO), 30));
+                case "Moderado" -> predicates.add(cb.and(cb.gt(frp, 30), cb.le(frp, 90)));
+                case "Alto" -> predicates.add(cb.and(cb.gt(frp, 90), cb.le(frp, 150)));
+                case "Crítico" -> predicates.add(cb.gt(frp, 150));
+                case "" -> { }
+                default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Intensidad inválida");
+            }
+            if (!q.isBlank()) {
+                String term = q.toLowerCase(java.util.Locale.ROOT);
+                String escaped = term.replace("!", "!!").replace("%", "!%").replace("_", "!_");
+                var match = cb.like(cb.lower(root.get("countryHint")), "%" + escaped + "%", '!');
+                String numeric = term.replaceFirst("^incendio\\s*#?\\s*", "").replaceFirst("^#", "");
+                try {
+                    match = cb.or(match, cb.equal(root.get("id"), Long.parseLong(numeric)));
+                } catch (NumberFormatException ignored) { }
+                predicates.add(match);
+            }
+            return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+        };
+        return fireEventRepository.findAll(filter, pageRequest)
+                .map(event -> modelMapper.map(event, FireEventResponseDto.class));
     }
 
     public FireEventResponseDto getFireEvent(Long id) {
