@@ -30,9 +30,9 @@ class SmokecastApplicationTests {
     @Test void healthAndInvalidRequests() throws Exception {
         assertThat(get("/health").statusCode()).isEqualTo(200);
         assertThat(get("/api/v1/fires?size=0").statusCode()).isEqualTo(400);
-        assertThat(get("/api/v1/detection?page=-1").statusCode()).isEqualTo(400);
+        assertThat(get("/api/v1/detections?page=-1").statusCode()).isEqualTo(400);
         assertThat(get("/api/v1/fires/999999").statusCode()).isEqualTo(404);
-        assertThat(get("/api/v1/detection/999999").statusCode()).isEqualTo(404);
+        assertThat(get("/api/v1/detections/999999").statusCode()).isEqualTo(404);
     }
 
     @Test void filtersBeforePaginationAndCountsOnlyMatches() throws Exception {
@@ -63,7 +63,7 @@ class SmokecastApplicationTests {
             var fires = get("/api/v1/fires");
             assertThat(fires.statusCode()).isEqualTo(200);
             assertThat(fires.body()).contains("\"content\"", "\"centroidLat\":-12");
-            var detection = get("/api/v1/detection/1");
+        var detection = get("/api/v1/detections/1");
             assertThat(detection.statusCode()).isEqualTo(200);
             assertThat(detection.body()).contains("\"fireEvent\"", "\"latitude\":-12");
         } finally {

@@ -23,6 +23,8 @@ Windows: `mvnw.cmd spring-boot:run`. Spring carga `.env` como un archivo propert
 usar `CLAVE=valor` sin `export` ni comillas de shell. Las variables de entorno tienen prioridad.
 Puerto predeterminado: 8081. Hibernate crea/actualiza las tablas `fire_events` y
 `fire_detections`; se mantiene `ddl-auto=update` para desarrollo local.
+
+Documentación OpenAPI/Swagger: `http://127.0.0.1:8081/docs` · JSON: `/openapi.json`.
 No ejecuta seeds. Si la base está vacía, los listados devuelven páginas vacías.
 
 ## Endpoints
@@ -30,13 +32,16 @@ No ejecuta seeds. Si la base está vacía, los listados devuelven páginas vací
 - `GET /health`: verifica conexión SQL.
 - `GET /api/v1/fires?page=0&size=10`: página de eventos.
 - `GET /api/v1/fires/{id}`: detalle del evento.
-- `GET /api/v1/detection?page=0&size=10`: página de detecciones.
-- `GET /api/v1/detection/{id}`: detalle de detección.
+- `GET /api/v1/detections?page=0&size=10`: página de detecciones.
+- `GET /api/v1/detections/{id}`: detalle de detección.
+- `POST /api/v1/fires/bulk`: inserta hasta 10 000 eventos y devuelve sus IDs.
+- `POST /api/v1/detections/bulk`: inserta hasta 10 000 detecciones asociadas a eventos existentes.
 
 Los listados conservan el objeto paginado con `content`; no son arrays directos.
 Un ID inexistente devuelve 404. Paginación inválida devuelve 400; `size` máximo 500.
-Los DTOs y ModelMapper evitan exponer directamente las entidades JPA.
-No hay endpoints de escritura ni agrupación automática de incendios en este hito.
+Los DTOs y ModelMapper evitan exponer directamente las entidades JPA. Los
+endpoints bulk están pensados para cargar lotes de la ingesta, no para sustituir
+el seed inicial.
 
 ## Verificación
 

@@ -15,10 +15,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.idea.smokecast.fireDetection.dto.FireDetectionBulkPayload;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/detection")
+@RequestMapping("/api/v1/detections")
 public class FireDetectionController {
     private final FireDetectionService fireDetectionService;
 
@@ -35,5 +38,15 @@ public class FireDetectionController {
     @GetMapping("/{id}")
     public ResponseEntity<FireDetectionResponseDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(fireDetectionService.getFireDetection(id));
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<java.util.Map<String, Object>> insertBulk(@RequestBody FireDetectionBulkPayload payload) {
+        try {
+            var ids = fireDetectionService.insertBulk(payload == null ? null : payload.items());
+            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("inserted", ids.size(), "ids", ids));
+        } catch (IllegalArgumentException error) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
+        }
     }
 }

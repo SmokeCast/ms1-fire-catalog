@@ -15,6 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.idea.smokecast.fireEvent.dto.FireEventBulkPayload;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,6 +45,16 @@ public class FireEventController {
     @GetMapping("/countries")
     public java.util.List<String> countries() {
         return fireEventService.getCountries();
+    }
+
+    @PostMapping("/bulk")
+    public ResponseEntity<java.util.Map<String, Object>> insertBulk(@RequestBody FireEventBulkPayload payload) {
+        try {
+            var ids = fireEventService.insertBulk(payload == null ? null : payload.items());
+            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("inserted", ids.size(), "ids", ids));
+        } catch (IllegalArgumentException error) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, error.getMessage(), error);
+        }
     }
 
     @GetMapping("/{id}")
